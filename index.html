@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بيئتنا</title>
+</head>
+<body>
+    <style>
+    body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #0b3b17; /* أخضر غامق */
+        font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* إعدادات القائمة العريضة (Tabs) في الأعلى */
+    .tabs-nav {
+        width: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        border-bottom: 1px solid #e0e0e0;
+        background-color: #ffffff;
+        z-index: 1000;
+    }
+
+    .tabs-list {
+        display: flex;
+        align-items: center;
+        list-style: none;
+        margin: 0;
+        padding: 0 16px;
+        gap: 24px;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .tab-link {
+        display: inline-block;
+        padding: 12px 4px;
+        text-decoration: none;
+        color: #5f6368;
+        font-size: 15px;
+        font-weight: 500;
+        position: relative;
+        transition: color 0.2s ease;
+    }
+
+    .tab-link:hover {
+        color: #1a0dab;
+    }
+
+    .tab-link.active {
+        color: #202124;
+        font-weight: 600;
+    }
+
+    .tab-link.active::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: #000000;
+        border-radius: 2px 2px 0 0;
+    }
+
+    /* تنسيق عنوان "بيئتنا" في المنتصف */
+    .app-title {
+        color: #ffffff;
+        font-size: 26px;
+        font-weight: bold;
+        margin-top: 60px;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+
+    /* صندوق النتائج فوق الكاميرا للمواطن */
+    .result-box {
+        background-color: #ffffff;
+        color: #0b3b17;
+        width: 380px;
+        max-width: 90vw;
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        text-align: right;
+        direction: rtl;
+        font-size: 14px;
+        border: 2px solid #4caf50;
+    }
+
+    .result-box h3 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        color: #1b5e20;
+    }
+
+    .result-box p {
+        margin: 3px 0;
+    }
+
+    /* الحاوية المربعة للكاميرا في منتصف الصفحة */
+    .camera-container {
+        width: 380px;
+        height: 380px;
+        max-width: 90vw;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        background-color: #000;
+        border: 3px solid #4caf50;
+        margin-bottom: 20px;
+    }
+
+    #webcam {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    </style>
+
+    <!-- شريط الـ Tabs في الأعلى -->
+    <nav class="tabs-nav">
+      <ul class="tabs-list">
+        <li class="tab-item"><a href="what_is_this_app.html" class="tab-link">ما هو موقع بيئتنا؟</a></li>
+        <li class="tab-item"><a href="index.html" class="tab-link active">الصفحة الرئيسية</a></li>
+        <li class="tab-item"><a href="the_developers.html" class="tab-link">المطورين</a></li>
+      </ul>
+    </nav>
+
+    <!-- عنوان بيئتنا في المنتصف -->
+    <h1 class="app-title">بيئتنا</h1>
+
+    <!-- صندوق عرض النتيجة للمواطن (فوق الكاميرا مباشرة) -->
+    <div class="result-box" id="resultCard">
+        <h3 id="resultTitle">جاري تحميل النظام...</h3>
+        <p id="resultBin">♻️ صندوق الإلقاء: بانتظار الفحص</p>
+        <p id="resultInstructions">💡 الإرشادات: وجه الكاميرا نحو المنتج</p>
+    </div>
+
+    <!-- حاوية الكاميرا في المنتصف -->
+    <div class="camera-container">
+      <video id="webcam" autoplay playsinline muted></video>
+    </div>
+
+<script>
+    async function startWebcam() {
+        const videoElement = document.getElementById('webcam');
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "environment",
+                    width: { ideal: 640 },
+                    height: { ideal: 640 }
+                },
+                audio: false
+            });
+
+            videoElement.srcObject = stream;
+        } catch (error) {
+            console.error("تعذر الوصول للكاميرا:", error);
+            alert("يرجى السماح بصلاحية الوصول للكاميرا لتشغيل الفحص.");
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', startWebcam);
+</script>
+
+<script>
+const MODEL_URL = "https://teachablemachine.withgoogle.com/models/b2rA1dFwt/";
+
+let model;
+
+const recyclingData = {
+    "plastic": {
+        name: "بلاستيك",
+        bin: "الصندوق الأصفر (البلاستيك)",
+        instructions: "إفراغ السائل، ضغط الزجاجة لتوفير المساحة، وإغلاق الغطاء."
+    },
+    "aluminum_metal": {
+        name: "معادن / ألومنيوم",
+        bin: "الصندوق الفضي / المعادن",
+        instructions: "ضغط العلبة يدوياً وتقليل حجمها قبل إلقائها."
+    },
+    "cardboard": {
+        name: "كرتون وورق مقوى",
+        bin: "الصندوق الأزرق (الورق والكرتون)",
+        instructions: "إزالة أي مواد بلاستيكية أو شريط لاصق وطَي العبوة تماماً."
+    },
+    "glass": {
+        name: "زجاج",
+        bin: "الصندوق الأخضر (الزجاج)",
+        instructions: "التأكد من أن الزجاج غير مكسور وفصل الأغطية المعدنية."
+    }
+};
+
+async function loadModel() {
+    const modelPath = MODEL_URL + "model.json";
+    const metadataPath = MODEL_URL + "metadata.json";
+
+    try {
+        model = await tmImage.load(modelPath, metadataPath);
+        console.log("تم تحميل نموذج الذكاء الاصطناعي بنجاح.");
+        document.getElementById("resultTitle").innerText = "الكاميرا جاهزة للفحص";
+        document.getElementById("resultBin").innerText = "♻️ صندوق الإلقاء: جاهز";
+        document.getElementById("resultInstructions").innerText = "💡 الإرشادات: ضع المخلفات أمام الكاميرا";
+    } catch (error) {
+        console.error("خطأ في تحميل النموذج:", error);
+        document.getElementById("resultTitle").innerText = "خطأ في التحميل";
+    }
+}
+
+async function classifyFrame(videoElement) {
+    if (!model || !videoElement || videoElement.readyState !== videoElement.HAVE_ENOUGH_DATA) {
+        return null;
+    }
+
+    const predictions = await model.predict(videoElement);
+    predictions.sort((a, b) => b.probability - a.probability);
+    const topMatch = predictions[0];
+
+    if (topMatch.probability > 0.80) {
+        const classKey = topMatch.className;
+        const details = recyclingData[classKey] || {
+            name: classKey,
+            bin: "عام",
+            instructions: "إعادة تدوير عامة."
+        };
+
+        return {
+            className: classKey,
+            confidence: (topMatch.probability * 100).toFixed(0),
+            details: details
+        };
+    }
+
+    return null;
+}
+
+function startPredictionLoop(videoElement, onResultCallback) {
+    async function loop() {
+        const result = await classifyFrame(videoElement);
+        if (result && typeof onResultCallback === 'function') {
+            onResultCallback(result);
+        }
+        requestAnimationFrame(loop);
+    }
+    loop();
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+    await loadModel();
+    
+    const myVideoElement = document.getElementById('webcam'); 
+    
+    startPredictionLoop(myVideoElement, (data) => {
+        // تحديث النصوص مباشرة فوق الكاميرا للمواطن
+        document.getElementById('resultTitle').innerText = `المنتج: ${data.details.name} (${data.confidence}%)`;
+        document.getElementById('resultBin').innerText = `♻️ صندوق الإلقاء: ${data.details.bin}`;
+        document.getElementById('resultInstructions').innerText = `💡 الإرشادات: ${data.details.instructions}`;
+    });
+});
+</script>
+
+</body>
+</html>
